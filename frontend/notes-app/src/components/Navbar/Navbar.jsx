@@ -7,9 +7,10 @@ const Navbar = ({ userInfo }) => {
 
     const [searchQuery, setSearchQuery] = useState("");
 
-    const navigate = useNavigate;
+    const navigate = useNavigate();
 
     const onLogout = () => {
+        localStorage.clear();
         navigate("/login");
     };
 
