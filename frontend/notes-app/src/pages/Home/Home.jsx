@@ -16,6 +16,8 @@ const Home = () => {
     });
 
     const [userInfo, setUserInfo] = useState(null);
+    const [allNotes, setAllNotes] = useState([]);
+
     const navigate = useNavigate();
 
     // get user info
@@ -34,7 +36,21 @@ const Home = () => {
         }
     };
 
+    // get all notes
+    const getAllNotes = async () => {
+        try {
+            const response = await axiosInstance.get("/all-note");
+
+            if (response.data && response.data.notes) {
+                setAllNotes(response.data.notes);
+            }
+        } catch (error) {
+            console.log("An unexpected error occured. Please try again");
+        }
+    }
+
     useEffect(() => {
+        getAllNotes();
         getUserInfo();
         return () => { };
     }, []);
@@ -45,16 +61,20 @@ const Home = () => {
 
             <div className="container mx-auto">
                 <div className="grid grid-cols-3 gap-4 mt-8">
-                    <NoteCard
-                        title="Meeting on 7th April"
-                        date="3rd Apr 2024"
-                        content="Meeting on 7th April on 7th April"
-                        tags="#meeting"
-                        isPinned={true}
-                        onEdit={() => { }}
-                        onDelete={() => { }}
-                        onPinNote={() => { }}
-                    />
+                    {allNotes.map((item, index) => (
+                        <NoteCard
+                            key={item._id}
+                            title={item.title}
+                            date={item.createdOn}
+                            content={item.content}
+                            tags={item.tags}
+                            isPinned={item.isPinned}
+                            onEdit={() => { }}
+                            onDelete={() => { }}
+                            onPinNote={() => { }}
+                        />
+                    ))}
+
                 </div>
             </div>
 
