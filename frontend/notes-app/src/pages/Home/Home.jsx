@@ -7,6 +7,7 @@ import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utills/axiosInstance";
 import Toast from "../../components/ToastMessage/Toast";
+import EmptyCard from "../../components/EmptyCard/EmptyCard";
 
 const Home = () => {
 
@@ -25,6 +26,8 @@ const Home = () => {
     const [userInfo, setUserInfo] = useState(null);
     const [allNotes, setAllNotes] = useState([]);
 
+    const [isSearch, setIsSearch] = useState(false);
+
     const navigate = useNavigate();
 
     const handleEdit = (noteDelails) => {
@@ -39,6 +42,7 @@ const Home = () => {
             type,
         });
     };
+
     const handleCloseToast = () => {
         setShowToastMsg({
             isShown: false,
@@ -76,6 +80,66 @@ const Home = () => {
         }
     }
 
+    // delete note
+    const deleteNote = async (data) => {
+        const noteId = data._id;
+
+        try {
+            const response = await axiosInstance.delete("/delete-note/" + noteId);
+
+            if (response.data && !response.data.error) {
+                showToastMessage("Note Deleted Successfully", 'delete');
+                getAllNotes();
+            }
+
+        } catch (error) {
+            //
+            if (error.response &&
+                error.response.data &&
+                error.response.data.message) {
+                console.log("An unexpected error occured. Please try again");
+            }
+        }
+    }
+
+    // search note
+    const onSearchNote = async (query) => {
+        try {
+            const response = await axiosInstance.get("/search-notes", {
+                params: { query },
+            });
+
+            if (response.data && response.data.notes) {
+                setIsSearch(true);
+                setAllNotes(response.data.notes);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const updateIsPinned = async (noteData) => {
+        const noteId = noteData._id;
+        try {
+            const response = await axiosInstance.post("/update-note-pinned/" + noteId, {
+                "isPinned": !noteData.isPinned,
+            });
+
+            if (response.data && response.data.note) {
+                showToastMessage("Note Updated Successfully")
+                getAllNotes();
+            }
+
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const handleClearSearch = () => {
+        setIsSearch(false);
+        getAllNotes();
+    }
+
     useEffect(() => {
         getAllNotes();
         getUserInfo();
@@ -84,10 +148,14 @@ const Home = () => {
 
     return (
         <>
-            <Navbar userInfo={userInfo} />
+            <Navbar
+                userInfo={userInfo}
+                onSearchNote={onSearchNote}
+                handleClearSearch={handleClearSearch}
+            />
 
             <div className="container mx-auto">
-                <div className="grid grid-cols-3 gap-4 mt-8">
+                {allNotes.length > 0 ? (<div className="grid grid-cols-3 gap-4 mt-8">
                     {allNotes.map((item, index) => (
                         <NoteCard
                             key={item._id}
@@ -96,13 +164,16 @@ const Home = () => {
                             content={item.content}
                             tags={item.tags}
                             isPinned={item.isPinned}
-                            onEdit={() => { handleEdit(item) }}
-                            onDelete={() => { }}
-                            onPinNote={() => { }}
+                            onEdit={() => handleEdit(item)}
+                            onDelete={() => deleteNote(item)}
+                            onPinNote={() => updateIsPinned(item)}
                         />
                     ))}
 
                 </div>
+                ) : (
+                    <EmptyCard />
+                )}
             </div>
 
             <button
